@@ -5,10 +5,11 @@ from word_item import WordItem
 class WordSpider(scrapy.Spider):
     name = 'word'
 
-    def __init__(self, filename_out, term):
+    def __init__(self, term, config):
         self.base_url = 'https://www.mdbg.net/chinese/dictionary?wdqb='
         self.ui = self.SpiderUi(term)
-        self.filename_out = filename_out
+        self.filename_out = config['output_filename']
+        self.max_defs = config.getint('max_definitions')
         self.start_urls = [self.base_url + self.ui.get_search_query()]
 
     def parse(self, response):
@@ -34,7 +35,10 @@ class WordSpider(scrapy.Spider):
             item = WordItem()
             item['hanzi'] = row.css(hanzi_css).xpath(normalize).extract_first()
             item['pinyin'] = row.css(pinyin_css).xpath(normalize).extract_first()
-            item['english'] = row.css(english_css).xpath(normalize).extract_first()
+            # Get all definitions.
+            definitions = row.css(english_css).xpath(normalize).extract_first()
+            # Write no more than max_defs definitions.
+            item['english'] = '/'.join(definitions.split('/')[:self.max_defs])
             if self.ui.check_item(item) == True:
                 return item
 
@@ -50,6 +54,7 @@ class WordSpider(scrapy.Spider):
             self.term = term
 
         def get_search_query(self):
+            # print without newline, with flush
             print(self.term.clear, end='', flush=True)
             search_query = input('Enter pinyin: ')
             return search_query
