@@ -1,8 +1,13 @@
 #!/usr/bin/env python
 from blessed import Terminal
 from configparser import ConfigParser
-from scrapy.crawler import CrawlerProcess
-from word_spider import WordSpider
+from word_parser import WordParser
+import ui
+
+
+def run_query(parser, term):
+    query = ui.get_search_query(term)
+    parser.run_parser(query)
 
 
 if __name__ == '__main__':
@@ -13,9 +18,9 @@ if __name__ == '__main__':
 
     term = Terminal() 
     with term.fullscreen():
-        process = CrawlerProcess({
-            'USER_AGENT': 'Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 5.1)',
-            'LOG_LEVEL': 'ERROR',
-        })
-        process.crawl(WordSpider, term=term, config=config)
-        process.start() # the script will block here until the crawling is finished
+        parser = WordParser(config)
+        run_query(parser, term)
+
+        question = '\nOne more query ([y]/n)? '
+        while ui.yes_or_no(question):
+            run_query(parser, term)
