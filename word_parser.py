@@ -20,6 +20,7 @@ class WordParser():
         '''Parse mdbg.net search results.'''
         search_url = self.base_url + query
 
+        ui.print_search_request(search_url)
         r = requests.get(search_url)
         soup = BeautifulSoup(r.text, features='lxml')
 
@@ -40,11 +41,11 @@ class WordParser():
             # Write no more than max_defs definitions.
             word.english = '/'.join(definitions.split('/')[:self.max_defs])
             if ui.check_item(word) == True:
-                word.strokes = self.parse_charmenu(word.hanzi)
+                word.strokes = self.get_strokes(word.hanzi)
                 word.write_to_file(self.filename_out)
                 break
 
-    def parse_charmenu(self, hanzi):
+    def get_strokes(self, hanzi):
         link_path = 'div.nonprintable a[title="Show stroke order"]'
         strokes = []
         for char in hanzi:
@@ -54,10 +55,13 @@ class WordParser():
             strokes_link = soup.select_one(link_path)
             if strokes_link:
                 image_name = self.get_image_name(strokes_link)
+                image_tag = '<img src="{}">'.format(image_name)
                 image_link = self.image_base + image_name
+
+                ui.print_download(image_name, char)
                 urlretrieve(image_link, image_name)
-                strokes.append(image_name)
-                print(strokes)
+
+                strokes.append(image_tag)
         return strokes 
 
     def get_image_name(self, strokes_link):

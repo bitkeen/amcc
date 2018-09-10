@@ -16,3 +16,16 @@ def yes_or_no(question):
     while answer not in ['', 'y', 'n']:
         answer = input('Wrong input.\n').lower()
     return answer in ['', 'y']
+
+def print_formatted(*args, format_str):
+    message = format_str.format(*args)
+    print(message)
+
+def print_download(image_name, char):
+    format_str = 'Downloading {} for {}...'
+    print_formatted(image_name, char, format_str=format_str)
+
+def print_search_request(search_url):
+    format_str = 'Sending request to {}...'
+    print_formatted(search_url, format_str=format_str)
+
