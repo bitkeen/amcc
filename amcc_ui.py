@@ -11,6 +11,12 @@ def check_item(word):
     question = str(word) + '\nIs this what you\'re looking for ([y]/n)? '
     return yes_or_no(question)
 
+def ask_rewrite(term):
+    # print without newline, with flush
+    print(term.clear, end='', flush=True)
+    question = 'Are you sure you want to rewrite the existing file ([y]/n)? '
+    return yes_or_no(question)
+
 def yes_or_no(question):
     answer = input(question).lower()
     while answer not in ['', 'y', 'n']:
@@ -29,3 +35,6 @@ def print_search_request(search_url):
     format_str = 'Sending request to {}...'
     print_formatted(search_url, format_str=format_str)
 
+def print_write(pinyin, filename_out):
+    format_str = 'Writing {} to {}...'
+    print_formatted(pinyin, filename_out, format_str=format_str)

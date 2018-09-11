@@ -1,8 +1,8 @@
+import amcc_ui
 from bs4 import BeautifulSoup
 import re
 import requests
 from word_model import Word
-import amcc_ui
 from urllib.request import urlretrieve
 
 
@@ -13,7 +13,10 @@ class WordParser():
         self.charmenu_base = self.mdbg + 'dictionary-ajax?c=cdqchi&i='
         self.image_base = self.mdbg + 'rsc/img/stroke_anim/'
 
+        (output_dir, media_dir) = (config['output_dir'], config['media_dir'])
         self.filename_out = config['output_filename']
+        self.media_path = '{}/{}'.format(output_dir, media_dir)
+        self.tsv_path = '{}/{}'.format(output_dir, self.filename_out)
         self.max_defs = config.getint('max_definitions')
 
     def run_parser(self, query):
@@ -33,7 +36,6 @@ class WordParser():
 
         for row in rows:
             word = Word()
-
             word.hanzi = row.select_one(hanzi_css).text
             word.pinyin = row.select_one(pinyin_css).text
             # Get all definitions.
@@ -42,7 +44,9 @@ class WordParser():
             word.english = '/'.join(definitions.split('/')[:self.max_defs])
             if amcc_ui.check_item(word) == True:
                 word.strokes = self.get_strokes(word.hanzi)
-                word.write_to_file(self.filename_out)
+
+                amcc_ui.print_write(word.pinyin, self.filename_out)
+                word.write_to_file(self.tsv_path)
                 break
 
     def get_strokes(self, hanzi):
@@ -55,12 +59,12 @@ class WordParser():
             strokes_link = soup.select_one(link_path)
             if strokes_link:
                 image_name = self.get_image_name(strokes_link)
+                image_path = '{}/{}'.format(self.media_path, image_name)
                 image_tag = '<img src="{}">'.format(image_name)
                 image_link = self.image_base + image_name
 
                 amcc_ui.print_download(image_name, char)
-                urlretrieve(image_link, image_name)
-
+                urlretrieve(image_link, image_path)
                 strokes.append(image_tag)
         return strokes 
 
