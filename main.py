@@ -2,11 +2,11 @@
 from blessed import Terminal
 from configparser import ConfigParser
 from word_parser import WordParser
-import ui
+import amcc_ui
 
 
 def run_query(parser, term):
-    query = ui.get_search_query(term)
+    query = amcc_ui.get_search_query(term)
     parser.run_parser(query)
 
 
@@ -22,5 +22,5 @@ if __name__ == '__main__':
         run_query(parser, term)
 
         question = '\nOne more query ([y]/n)? '
-        while ui.yes_or_no(question):
+        while amcc_ui.yes_or_no(question):
             run_query(parser, term)

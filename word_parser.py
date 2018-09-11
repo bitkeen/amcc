@@ -2,7 +2,7 @@ from bs4 import BeautifulSoup
 import re
 import requests
 from word_model import Word
-import ui
+import amcc_ui
 from urllib.request import urlretrieve
 
 
@@ -20,7 +20,7 @@ class WordParser():
         '''Parse mdbg.net search results.'''
         search_url = self.base_url + query
 
-        ui.print_search_request(search_url)
+        amcc_ui.print_search_request(search_url)
         r = requests.get(search_url)
         soup = BeautifulSoup(r.text, features='lxml')
 
@@ -40,7 +40,7 @@ class WordParser():
             definitions = row.select_one(english_css).text
             # Write no more than max_defs definitions.
             word.english = '/'.join(definitions.split('/')[:self.max_defs])
-            if ui.check_item(word) == True:
+            if amcc_ui.check_item(word) == True:
                 word.strokes = self.get_strokes(word.hanzi)
                 word.write_to_file(self.filename_out)
                 break
@@ -58,7 +58,7 @@ class WordParser():
                 image_tag = '<img src="{}">'.format(image_name)
                 image_link = self.image_base + image_name
 
-                ui.print_download(image_name, char)
+                amcc_ui.print_download(image_name, char)
                 urlretrieve(image_link, image_name)
 
                 strokes.append(image_tag)
