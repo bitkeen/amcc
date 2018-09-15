@@ -7,12 +7,12 @@ from urllib.request import urlretrieve
 
 
 class WordParser():
-    def __init__(self, config):
-        self.mdbg = 'https://www.mdbg.net/chinese/'
-        self.base_url = self.mdbg + 'dictionary?wdqb='
-        self.charmenu_base = self.mdbg + 'dictionary-ajax?c=cdqchi&i='
-        self.image_base = self.mdbg + 'rsc/img/stroke_anim/'
+    mdbg = 'https://www.mdbg.net/chinese/'
+    base_url = mdbg + 'dictionary?wdqb='
+    charmenu_base = mdbg + 'dictionary-ajax?c=cdqchi&i='
+    image_base = mdbg + 'rsc/img/stroke_anim/'
 
+    def __init__(self, config):
         (output_dir, media_dir) = (config['output_dir'], config['media_dir'])
         self.filename_out = config['output_filename']
         self.media_path = '{}/{}'.format(output_dir, media_dir)
