@@ -1,7 +1,8 @@
-import amcc_ui
-from bs4 import BeautifulSoup
+import errno
+import os
 import re
 import requests
+from bs4 import BeautifulSoup
 from word_model import Word
 from urllib.request import urlretrieve
 
@@ -12,18 +13,38 @@ class WordParser():
     charmenu_base = mdbg + 'dictionary-ajax?c=cdqchi&i='
     image_base = mdbg + 'rsc/img/stroke_anim/'
 
-    def __init__(self, config):
-        (output_dir, media_dir) = (config['output_dir'], config['media_dir'])
+    def __init__(self, config, ui):
+        self.output_dir = config['output_dir']
+        self.media_dir = config['media_dir']
+        self.file_mode = config['file_mode']
         self.filename_out = config['output_filename']
-        self.media_path = '{}/{}'.format(output_dir, media_dir)
-        self.tsv_path = '{}/{}'.format(output_dir, self.filename_out)
         self.max_defs = config.getint('max_definitions')
+        self.ui = ui
 
-    def run_parser(self, query):
+    @property
+    def media_path(self):
+        return '{}/{}'.format(self.output_dir, self.media_dir)
+
+    @property
+    def tsv_path(self):
+        return '{}/{}'.format(self.output_dir, self.filename_out)
+
+    def start(self):
+        self.prepare_output_structure()
+
+        while True:
+            self.run_once()
+            if self.ui.yes_or_no('\nOne more query ([y]/n)? ') == False:
+                break
+
+
+    def run_once(self):
         '''Parse mdbg.net search results.'''
+        # Get query from the user; compose the search url.
+        query = self.ui.get_search_query()
         search_url = self.base_url + query
 
-        amcc_ui.print_search_request(search_url)
+        self.ui.print_search_request(search_url)
         r = requests.get(search_url)
         soup = BeautifulSoup(r.text, features='lxml')
 
@@ -34,6 +55,7 @@ class WordParser():
         pinyin_css = 'td.head div.pinyin'
         english_css = 'td.details div.defs'
 
+        words = []
         for row in rows:
             word = Word()
             word.hanzi = row.select_one(hanzi_css).text
@@ -42,12 +64,14 @@ class WordParser():
             definitions = row.select_one(english_css).text
             # Write no more than max_defs definitions.
             word.english = '/'.join(definitions.split('/')[:self.max_defs])
-            if amcc_ui.check_item(word) == True:
-                word.strokes = self.get_strokes(word.hanzi)
+            words.append(word)
 
-                amcc_ui.print_write(word.pinyin, self.filename_out)
-                word.write_to_file(self.tsv_path)
-                break
+        selected_index = self.ui.print_menu(words)
+        selected = words[selected_index]
+        selected.strokes = self.get_strokes(selected.hanzi)
+
+        self.ui.print_write(selected.pinyin, self.filename_out)
+        selected.write_to_file(self.tsv_path)
 
     def get_strokes(self, hanzi):
         link_path = 'div.nonprintable a[title="Show stroke order"]'
@@ -63,7 +87,7 @@ class WordParser():
                 image_tag = '<img src="{}">'.format(image_name)
                 image_link = self.image_base + image_name
 
-                amcc_ui.print_download(image_name, char)
+                self.ui.print_download(image_name, char)
                 urlretrieve(image_link, image_path)
                 strokes.append(image_tag)
         return strokes 
@@ -80,3 +104,19 @@ class WordParser():
         # image_name: "22909".
         image_name = re.search('(?<=\')\d*(?=\')', parts[-1]).group()
         return '{}.gif'.format(image_name)
+
+    def prepare_output_structure(self):
+        '''Create the necessary output directories and files depending on the
+        config file.
+        '''
+        try:
+            os.makedirs(self.media_path)
+        except OSError as e:
+            if e.errno != errno.EEXIST:
+                raise
+        
+        if (self.file_mode == 'w'
+                and os.path.isfile(self.tsv_path)
+                and self.ui.ask_rewrite()):
+            # Create new file instead of appending to an existing one.
+            open(self.tsv_path, 'w').close() 
