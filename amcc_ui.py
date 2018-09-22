@@ -9,8 +9,9 @@ def print_formatted(*args, format_str):
 
 
 class Ui:
-    def __init__(self, term):
+    def __init__(self, config, term):
         self.term = term
+        self.config = config
 
     def get_search_query(self):
         clear_screen(self.term)
@@ -36,6 +37,9 @@ class Ui:
             answer = input('Wrong input.\n').lower()
         return answer in ['', 'y']
 
+    def print_no_results(self):
+        print('No results were found for your search query.')
+
     def print_download(self, image_name, char):
         format_str = 'Downloading {} for {}...'
         print_formatted(image_name, char, format_str=format_str)
@@ -49,13 +53,18 @@ class Ui:
         print_formatted(pinyin, filename_out, format_str=format_str)
 
     def print_menu(self, items):
-        header = 'Select definition. Press q to exit.'
-        menu = Menu(self.term, header, items)
+        header = 'Select definition. Press q to exit.\n'
+        menu = Menu(self.config, self.term, header, items)
         return menu.run()
 
 
 class Menu:
-    def __init__(self, term, header, items):
+    def __init__(self, config, term, header, items):
+        try:
+            self.vi_bindings = config.getint('vi_bindings')
+        except:
+            self.vi_bindings = 1
+
         self.current_item = 0
         self.term = term
         self.header = header
@@ -64,37 +73,41 @@ class Menu:
         self.items = items[:5]
 
     def run(self):
-        self.draw()
+        # Hide the cursor.
+        with self.term.hidden_cursor():
+            self.draw()
 
-        # Handle keypresses from the user.
-        with self.term.cbreak():
-            val = ''
-            while val.lower() != 'q':
-                val = self.term.inkey()
-                if val.is_sequence:
-                    if val.name == 'KEY_ENTER':
-                        clear_screen(self.term)
-                        return self.current_item
-                    elif val.name == 'KEY_UP':
-                        self.item_up()
-                    elif val.name == 'KEY_DOWN':
-                        self.item_down()
-                elif val:
-                    if val == 'k':
-                        self.item_up()
-                    elif val == 'j':
-                        self.item_down()
+            # Handle keypresses from the user.
+            with self.term.cbreak():
+                key = ''
+                while key.lower() != 'q':
+                    key = self.term.inkey()
+                    if key.is_sequence:
+                        if key.name == 'KEY_ENTER':
+                            clear_screen(self.term)
+                            return self.current_item
+                        elif key.name == 'KEY_UP':
+                            self.item_up()
+                        elif key.name == 'KEY_DOWN':
+                            self.item_down()
+                    elif key and self.vi_bindings:
+                        if key == 'k':
+                            self.item_up()
+                        elif key == 'j':
+                            self.item_down()
 
     def draw(self):
+        '''Draw the menu with current item in selection.'''
         clear_screen(self.term)
-        print(self.header)
+        print(self.term.bold(self.header))
         for index, item in enumerate(self.items):
             if index == self.current_item:
-                print(self.term.bright_red_on_bright_yellow(str(item)))
+                print(self.term.white_on_blue(str(item)))
             else:
                 print(item)
 
     def item_down(self):
+        '''Move down the list.'''
         if self.current_item < (len(self.items) - 1):
             # Go down the list.
             self.current_item += 1
@@ -105,6 +118,7 @@ class Menu:
             self.draw()
 
     def item_up(self):
+        '''Move up the list.'''
         if self.current_item > 0:
             # Go up the list.
             self.current_item -= 1

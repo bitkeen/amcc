@@ -9,10 +9,12 @@ if __name__ == '__main__':
     config = ConfigParser()
     config.read('amcc.conf')
     # Select the 'main' section from the config file.
-    config = config['main']
+    parser_config = config['main']
+    ui_config = config['ui']
+
 
     term = Terminal() 
     with term.fullscreen():
-        ui = Ui(term)
-        parser = WordParser(config, ui)
+        ui = Ui(ui_config, term)
+        parser = WordParser(parser_config, ui)
         parser.start()

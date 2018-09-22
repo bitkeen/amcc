@@ -51,7 +51,15 @@ class WordParser():
         soup = BeautifulSoup(r.text, features='lxml')
 
         results_table = soup.select_one('table.wordresults')
-        rows = results_table.select('tr.row')
+
+        try:
+            rows = results_table.select('tr.row')
+        except AttributeError:
+            # No results were found for the search query;
+            # results_table is None.
+            self.ui.print_no_results()
+            return
+
 
         hanzi_css = 'td.head div.hanzi'
         pinyin_css = 'td.head div.pinyin'
