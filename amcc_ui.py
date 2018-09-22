@@ -1,11 +1,6 @@
 def clear_screen(term):
-    # print without newline, with flush
+    '''Clear screen by using print without newline, with flush.'''
     print(term.clear, end='', flush=True)
-
-
-def print_formatted(*args, format_str):
-    message = format_str.format(*args)
-    print(message)
 
 
 class Ui:
@@ -42,15 +37,15 @@ class Ui:
 
     def print_download(self, image_name, char):
         format_str = 'Downloading {} for {}...'
-        print_formatted(image_name, char, format_str=format_str)
+        print(format_str.format(image_name, char))
 
     def print_search_request(self, search_url):
         format_str = 'Sending request to {}...'
-        print_formatted(search_url, format_str=format_str)
+        print(format_str.format(search_url))
 
     def print_write(self, pinyin, filename_out):
         format_str = 'Writing {} to {}...'
-        print_formatted(pinyin, filename_out, format_str=format_str)
+        print(format_str.format(pinyin, filename_out))
 
     def print_menu(self, items):
         header = 'Select definition. Press q to exit.\n'
