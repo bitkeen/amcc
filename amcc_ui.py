@@ -60,12 +60,24 @@ class Menu:
         except:
             self.vi_bindings = 1
 
-        self.current_item = 0
         self.term = term
         self.header = header
+
+        self.selected_value = 0
+
         # Limit number of items: temporary measure to prevent overflow.
         # TODO: add pagination to fix this.
         self.items = items[:5]
+
+    @property
+    def selected_item(self):
+        return self.selected_value
+
+    @selected_item.setter
+    def selected_item(self, value):
+        '''Change the value and redraw the menu.'''
+        self.selected_value = value
+        self.draw()
 
     def run(self):
         # Hide the cursor.
@@ -80,45 +92,42 @@ class Menu:
                     if key.is_sequence:
                         if key.name == 'KEY_ENTER':
                             clear_screen(self.term)
-                            return self.current_item
+                            return self.selected_item
                         elif key.name == 'KEY_UP':
                             self.item_up()
                         elif key.name == 'KEY_DOWN':
                             self.item_down()
-                    elif key and self.vi_bindings:
-                        if key == 'k':
-                            self.item_up()
-                        elif key == 'j':
-                            self.item_down()
+                    elif key == 'q':
+                        exit(0)
+                    elif self.vi_bindings and key == 'k':
+                        self.item_up()
+                    elif self.vi_bindings and key == 'j':
+                        self.item_down()
 
     def draw(self):
         '''Draw the menu with current item in selection.'''
         clear_screen(self.term)
         print(self.term.bold(self.header))
         for index, item in enumerate(self.items):
-            if index == self.current_item:
+            if index == self.selected_item:
                 print(self.term.white_on_blue(str(item)))
             else:
                 print(item)
 
     def item_down(self):
         '''Move down the list.'''
-        if self.current_item < (len(self.items) - 1):
+        if self.selected_item < (len(self.items) - 1):
             # Go down the list.
-            self.current_item += 1
-            self.draw()
+            self.selected_item += 1
         else:
             # Go to the beginning of the list.
-            self.current_item = 0
-            self.draw()
+            self.selected_item = 0
 
     def item_up(self):
         '''Move up the list.'''
-        if self.current_item > 0:
+        if self.selected_item > 0:
             # Go up the list.
-            self.current_item -= 1
-            self.draw()
+            self.selected_item -= 1
         else:
             # Go to the end of the list.
-            self.current_item = len(self.items) - 1
-            self.draw()
+            self.selected_item = len(self.items) - 1
