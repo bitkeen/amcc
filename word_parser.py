@@ -30,13 +30,15 @@ class WordParser():
         return '{}/{}'.format(self.output_dir, self.filename_out)
 
     def start(self):
+        '''Run the parser in an infinite loop until the user chooses
+        to stop.
+        '''
         self.prepare_output_structure()
 
         while True:
             self.run_once()
             if self.ui.yes_or_no('\nOne more query ([y]/n)? ') == False:
                 break
-
 
     def run_once(self):
         '''Parse mdbg.net search results.'''
@@ -74,6 +76,7 @@ class WordParser():
         selected.write_to_file(self.tsv_path)
 
     def get_strokes(self, hanzi):
+        '''Find and download stroke animations.'''
         link_path = 'div.nonprintable a[title="Show stroke order"]'
         strokes = []
         for char in hanzi:
@@ -93,21 +96,25 @@ class WordParser():
         return strokes 
 
     def get_image_name(self, strokes_link):
-        # strokes_link example: 
+        '''Parse a JS line derived from the original HTML to get
+        the name of the strokes animation that will be downloaded.
+        '''
+        # Example of variable values:
+        # strokes_link: 
         # "aj('993d54',this,'cdas',0,'22909'); trackExitLink('inline...".
-        onclick = strokes_link['onclick']
-        pattern = '(?<=aj\()[^)]+(?=\))'
         # aj_text: "'993d54',this,'cdas',0,'22909'".
-        aj_text = re.search(pattern, onclick).group()
-        parts = aj_text.split(',')
         # parts[-1]: "'22909'".
         # image_name: "22909".
+        onclick = strokes_link['onclick']
+        pattern = '(?<=aj\()[^)]+(?=\))'
+        aj_text = re.search(pattern, onclick).group()
+        parts = aj_text.split(',')
         image_name = re.search('(?<=\')\d*(?=\')', parts[-1]).group()
         return '{}.gif'.format(image_name)
 
     def prepare_output_structure(self):
-        '''Create the necessary output directories and files depending on the
-        config file.
+        '''Create the necessary output directories and files depending
+        on the config file.
         '''
         try:
             os.makedirs(self.media_path)
