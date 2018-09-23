@@ -10,7 +10,7 @@ class Ui:
 
     def get_search_query(self):
         clear_screen(self.term)
-        search_query = input('Enter pinyin: ')
+        search_query = input('Enter a search query: ')
         return search_query
 
     def check_item(self, word):
@@ -38,6 +38,10 @@ class Ui:
     def print_image_download(self, char, image_name):
         format_str = 'Downloading strokes for {} - {}...'
         print(format_str.format(char, image_name))
+
+    def print_audio_request(self, hanzi, url):
+        format_str = 'Requesting audio for {} from {}...'
+        print(format_str.format(hanzi, url))
 
     def print_audio_download(self, hanzi, audio_name):
         format_str = 'Downloading audio for {} - {}...'

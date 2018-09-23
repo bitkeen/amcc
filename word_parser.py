@@ -142,6 +142,7 @@ class WordParser():
                       }
                   }
         # Send a post request to get the id of audio file.
+        self.ui.print_audio_request(hanzi, self.sound_base)
         r = requests.post(self.sound_base, json=payload)
         try:
             r.raise_for_status()
