@@ -28,16 +28,20 @@ class Ui:
     def yes_or_no(self, question):
         '''Return True if yes, else False.'''
         answer = input(question).lower()
-        while answer not in ['', 'y', 'n']:
+        while answer not in ['', 'y', 'n', 'yes', 'no']:
             answer = input('Wrong input.\n').lower()
-        return answer in ['', 'y']
+        return answer in ['', 'y', 'yes']
 
     def print_no_results(self):
         print('No results were found for your search query.')
 
-    def print_download(self, image_name, char):
-        format_str = 'Downloading {} for {}...'
-        print(format_str.format(image_name, char))
+    def print_image_download(self, char, image_name):
+        format_str = 'Downloading strokes for {} - {}...'
+        print(format_str.format(char, image_name))
+
+    def print_audio_download(self, hanzi, audio_name):
+        format_str = 'Downloading audio for {} - {}...'
+        print(format_str.format(hanzi, audio_name))
 
     def print_search_request(self, search_url):
         format_str = 'Sending request to {}...'
@@ -48,6 +52,7 @@ class Ui:
         print(format_str.format(pinyin, filename_out))
 
     def print_menu(self, items):
+        # header = '{} definitions found.\n'.format(len(items))
         header = 'Select definition. Press q to exit.\n'
         menu = Menu(self.config, self.term, header, items)
         return menu.run()

@@ -17,7 +17,8 @@ class Word:
         fields = (self.hanzi,
                   self.pinyin,
                   self.english,
-                  ''.join(self.strokes))
+                  ''.join(self.strokes),
+                  self.audio)
         with open(filename_out, 'a') as fout:
             line = '\t'.join(fields)
             fout.write(line) 

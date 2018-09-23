@@ -1,7 +1,9 @@
 import errno
+import json
 import os
 import re
 import requests
+import time
 from bs4 import BeautifulSoup
 from word_model import Word
 from urllib.request import urlretrieve
@@ -12,6 +14,7 @@ class WordParser():
     base_url = mdbg + 'dictionary?wdqb='
     charmenu_base = mdbg + 'dictionary-ajax?c=cdqchi&i='
     image_base = mdbg + 'rsc/img/stroke_anim/'
+    sound_base = 'https://api.soundoftext.com/sounds/'
 
     def __init__(self, config, ui):
         self.output_dir = config['output_dir']
@@ -60,7 +63,6 @@ class WordParser():
             self.ui.print_no_results()
             return
 
-
         hanzi_css = 'td.head div.hanzi'
         pinyin_css = 'td.head div.pinyin'
         english_css = 'td.details div.defs'
@@ -78,13 +80,20 @@ class WordParser():
 
         selected_index = self.ui.print_menu(words)
         selected = words[selected_index]
-        selected.strokes = self.get_strokes(selected.hanzi)
+
+        # Download stroke animations.
+        selected.strokes = self.download_strokes(selected.hanzi)
+
+        # Download pronunciation audio.
+        selected.audio = self.download_audio(selected.hanzi)
 
         self.ui.print_write(selected.pinyin, self.filename_out)
         selected.write_to_file(self.tsv_path)
 
-    def get_strokes(self, hanzi):
-        '''Find and download stroke animations.'''
+    def download_strokes(self, hanzi):
+        '''Find and download stroke animations.
+        Return an array of image tags to be inserted in the output file.
+        '''
         link_path = 'div.nonprintable a[title="Show stroke order"]'
         strokes = []
         for char in hanzi:
@@ -93,17 +102,17 @@ class WordParser():
 
             strokes_link = soup.select_one(link_path)
             if strokes_link:
-                image_name = self.get_image_name(strokes_link)
-                image_path = '{}/{}'.format(self.media_path, image_name)
-                image_tag = '<img src="{}">'.format(image_name)
-                image_link = self.image_base + image_name
+                image_filename = self.get_image_filename(strokes_link)
+                image_path = '{}/{}'.format(self.media_path, image_filename)
+                image_tag = '<img src="{}">'.format(image_filename)
+                image_link = self.image_base + image_filename
 
-                self.ui.print_download(image_name, char)
+                self.ui.print_image_download(char, image_filename)
                 urlretrieve(image_link, image_path)
                 strokes.append(image_tag)
         return strokes 
 
-    def get_image_name(self, strokes_link):
+    def get_image_filename(self, strokes_link):
         '''Parse a JS line derived from the original HTML to get
         the name of the strokes animation that will be downloaded.
         '''
@@ -112,13 +121,71 @@ class WordParser():
         # "aj('993d54',this,'cdas',0,'22909'); trackExitLink('inline...".
         # aj_text: "'993d54',this,'cdas',0,'22909'".
         # parts[-1]: "'22909'".
-        # image_name: "22909".
+        # image_filename: "22909".
         onclick = strokes_link['onclick']
         pattern = '(?<=aj\()[^)]+(?=\))'
         aj_text = re.search(pattern, onclick).group()
         parts = aj_text.split(',')
-        image_name = re.search('(?<=\')\d*(?=\')', parts[-1]).group()
-        return '{}.gif'.format(image_name)
+        image_filename = re.search('(?<=\')\d*(?=\')', parts[-1]).group()
+        return '{}.gif'.format(image_filename)
+
+    def download_audio(self, hanzi):
+        '''Download audio pronunciation file for the word.
+        Use api.soundoftext.com which retrieves the audio generated
+        by Google Translate.
+        '''
+        payload = {
+                      'engine': 'Google',
+                      'data': {
+                          'text': hanzi,
+                          'voice': 'cmn-Hant-TW'
+                      }
+                  }
+        # Send a post request to get the id of audio file.
+        r = requests.post(self.sound_base, json=payload)
+        try:
+            r.raise_for_status()
+        except requests.HTTPError as e:
+            message = 'Error. There was a problem with the request.' 
+            message += 'Status code: ' + str(e)
+            print(message)
+            return
+
+        try:
+            response_json = json.loads(r.text)
+            if response_json['success'] == True:
+                sound_id = response_json['id']
+                audio_link = self.get_sound_from_id(sound_id)
+
+                audio_filename = audio_link.split('/')[-1]
+                audio_path = '{}/{}'.format(self.media_path, audio_filename)
+                audio_tag = '[sound:{}]'.format(audio_filename)
+
+                self.ui.print_audio_download(hanzi, audio_filename)
+                urlretrieve(audio_link, audio_path)
+                return audio_tag
+            else:
+                raise Exception('Error. {}'.format(response_json['message']))
+        except Exception as e:
+            print(e)
+
+    def get_sound_from_id(self, sound_id):
+        '''Return url of the sound to be downloaded.'''
+        request_url = self.sound_base + sound_id
+        r = requests.get(request_url)
+        response_json = json.loads(r.text)
+
+        # Wait until the sound is ready.
+        while response_json['status'] == 'Pending':
+            r = requests.get(request_url)
+            response_json = json.loads(r.text)
+            time.sleep(1)
+
+        if response_json['status'] == 'Done':
+            return response_json['location']
+        elif response_json['status'] == 'Error':
+            message = 'Error. ' + response_json['message']
+            raise Exception(message)
 
     def prepare_output_structure(self):
         '''Create the necessary output directories and files depending
