@@ -1,10 +1,10 @@
 # Anki Mandarin Card Creator
 
-A command line tool that creates Anki cards to study Mandarin Chinese.
+A terminal program that creates Anki cards to study Mandarin Chinese.
 
-I created this program for myself to save time. Before, I would have to enter
-the values into the fields by hand, which gets tedious, especially with media
-files like images and sounds.
+I wrote it for myself to save time. Before, I would have to enter the values
+into the fields by hand, which gets tedious, especially with media files like
+images and sounds.
 
 It should be noted that as of now this is an ad hoc solution, since other
 learners might need fields that are different from the ones
