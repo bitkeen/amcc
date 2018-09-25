@@ -2,6 +2,8 @@
 
 A terminal program that creates Anki cards to study Mandarin Chinese.
 
+![AMCC screencast](readme-resources/screencast.gif)
+
 I wrote it for myself to save time. Before, I would have to enter the values
 into the fields by hand, which gets tedious, especially with media files like
 images and sounds.
@@ -16,6 +18,10 @@ The cards consist of:
 - English translations
 - Stroke order animations
 - Pronunciation audio
+
+Example of a card after importing:
+
+![Card demonstration](readme-resources/card.gif)
 
 ### How it works
 The user inputs search queries, results of which are parsed for
